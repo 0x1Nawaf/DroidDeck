@@ -409,7 +409,7 @@ class SessionService : Service() {
         val runtimeDir = File(filesDir, ".wayland-rt").apply { mkdirs() }
         killStragglers()
         val stillStarting = { gen == sessionGen && SessionState.running }
-        val prootPack = AddonPack.PROOT.await(this, stillStarting)
+        val prootPack = LinuxRuntime.patchedProot(this) || AddonPack.PROOT.await(this, stillStarting)
         val directAudioPack = AddonPack.DIRECTAUDIO.await(this, stillStarting)
         if (!stillStarting()) {
             Log.i(TAG, "session stopped while add-on packs were downloading")

@@ -286,8 +286,9 @@ else
     *"apk"*|*"add-on pack"*) ok "patched proot ($proot_line)" ;;
     *) note "device report has no proot binary line (build from before the check)" ;;
   esac
-  echo "$report" | grep -q 'proot fast path (active) *true' && ok "proot fast path was on" \
-    || note "proot fast path was not active ($(echo "$report" | grep 'proot fast path' | tr '\n' '; '))"
+  app_log=$(sh_ run-as "$pkg" cat "files/logs/$dir/app.log" 2>/dev/null)
+  echo "$app_log" | grep -Fq 'proot: fast path on (' && ok "proot fast path was on" \
+    || note "proot fast path activation was not recorded ($(echo "$report" | grep 'proot fast path' | tr '\n' '; '))"
   fps=$(sh_ run-as "$pkg" cat "files/logs/$dir/app.log" 2>/dev/null | grep 'last 10 s:' | tail -1 | sed 's/.*last 10 s: //' | cut -c1-70)
   [ -n "$fps" ] && echo "  last stats      $fps"
   sh_ run-as "$pkg" cat "files/logs/$dir/device.txt" 2>/dev/null | grep -E 'Memory page size|^Kernel' | sed 's/^/  report          /'
