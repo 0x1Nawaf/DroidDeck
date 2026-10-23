@@ -25,6 +25,7 @@ import android.os.PowerManager
 import android.hardware.display.DisplayManager
 import android.view.Display
 import android.util.Log
+import android.widget.Toast
 import com.droiddeck.launcher.R
 import com.droiddeck.launcher.SessionActivity
 import com.droiddeck.launcher.audio.DirectAudioRelayComponent
@@ -407,8 +408,30 @@ class SessionService : Service() {
         val sessionRoot = LinuxRuntime.sessionRoot(this).apply { mkdirs() }
         val runtimeDir = File(filesDir, ".wayland-rt").apply { mkdirs() }
         killStragglers()
-        for (pack in listOf(AddonPack.PROOT, AddonPack.DIRECTAUDIO))
-            if (!pack.await(this, { gen == sessionGen && SessionState.running })) Log.w(TAG, "${pack.name} pack unavailable")
+        val stillStarting = { gen == sessionGen && SessionState.running }
+        val prootPack = AddonPack.PROOT.await(this, stillStarting)
+        val directAudioPack = AddonPack.DIRECTAUDIO.await(this, stillStarting)
+        if (!stillStarting()) {
+            Log.i(TAG, "session stopped while add-on packs were downloading")
+            return
+        }
+        if (!directAudioPack) {
+            Log.w(TAG, "directaudio pack unavailable; game audio drivers will not be staged")
+            mainHandler.post {
+                Toast.makeText(this, R.string.session_directaudio_missing, Toast.LENGTH_LONG).show()
+            }
+        }
+        if (!LinuxRuntime.patchedProot(this)) {
+            if (SessionPrefs.allowStockProot(this)) {
+                Log.w(TAG, "proot: patched proot missing; droiddeck-stock-proot allows the rootfs copy")
+            } else {
+                val message = getString(R.string.session_proot_missing)
+                Log.e(TAG, "$message (pack ready=$prootPack)")
+                SessionEvents.fail("PROOT_MISSING", message, -1)
+                stopSession(-1)
+                return
+            }
+        }
         SessionFiles.stage(this, root, startsSession = true)
         // Earlier sessions' reports still read the Steam logs and VAC marker this session replaces.
         SessionArtifacts.awaitCollections()
@@ -420,6 +443,10 @@ class SessionService : Service() {
 
         val sessionDir = openSessionFolder()
         val sessionLog = File(sessionDir, "session.log")
+        val prootLine = "== proot: ${LinuxRuntime.prootBinary(this).path} (${LinuxRuntime.prootSource(this)})"
+        Log.i(TAG, prootLine)
+        runCatching { sessionLog.appendText(prootLine + "\n") }
+            .onFailure { Log.w(TAG, "could not write the proot line to ${sessionLog.path}", it) }
 
         Log.i(TAG, GpuClockPin.start(this))
         Log.i(TAG, GameThreadHints.start(this))
@@ -710,6 +737,7 @@ class SessionService : Service() {
         guest.add("BL_SYNC_FALLBACK=" + (if (SessionPrefs.syncFallback(this)) "1" else "0"))
         guest.add("BL_FSYNC_FIRST=" + (if (SessionPrefs.fsyncFirst(this)) "1" else "0"))
         guest.add("BL_GAMESCOPE_REALTIME=" + (if (SessionPrefs.gamescopeRealtime(this)) "1" else "0"))
+        if (SessionPrefs.cursorComposite(this)) guest.add("BL_CURSOR_COMPOSITE=1")
         if (com.droiddeck.launcher.core.ZramSupport.supported()) guest.add("BL_ZRAM=1")
         guest.add("BANNER_AUDIO_DIRECT_DECAY=0")
         val extra = extraEnv() + com.droiddeck.launcher.agent.AgentEnv.beginSession(this)

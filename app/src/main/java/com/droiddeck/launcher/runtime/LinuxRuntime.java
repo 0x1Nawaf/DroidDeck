@@ -63,15 +63,65 @@ public final class LinuxRuntime {
     }
 
     private static final String HOST_DIR = "opt/android-host";
+    /** The copy built with this tree and shipped in the APK. */
+    public static final String PROOT_APK = "apk";
+    /** The downloaded add-on pack, used when this build did not embed proot. */
+    public static final String PROOT_PACK = "add-on pack";
+    /** Termux's unpatched proot inside the rootfs. Developer switch only. */
+    public static final String PROOT_ROOTFS = "rootfs fallback";
+    public static final String PROOT_MISSING = "missing";
 
-    public static File prootBinary(Context context) {
-        if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot.so");
+    private static File apkProot(Context context) {
+        return new File(context.getApplicationInfo().nativeLibraryDir, "libproot.so");
+    }
+
+    private static File apkLoader(Context context) {
+        return new File(context.getApplicationInfo().nativeLibraryDir, "libproot-loader.so");
+    }
+
+    private static boolean apkProotReady(Context context) {
+        return apkProot(context).isFile() && apkLoader(context).isFile();
+    }
+
+    private static File rootfsProot(Context context) {
         return new File(rootDir(context), HOST_DIR + "/proot");
     }
 
-    public static File prootLoader(Context context) {
-        if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot-loader.so");
+    private static File rootfsLoader(Context context) {
         return new File(rootDir(context), HOST_DIR + "/loader");
+    }
+
+    private static boolean rootfsProotReady(Context context) {
+        return rootfsProot(context).isFile() && rootfsLoader(context).isFile();
+    }
+
+    /** Patched proot: the APK's own binary, or the add-on pack when the APK has none. */
+    public static boolean patchedProot(Context context) {
+        return apkProotReady(context) || AddonPack.PROOT.installed(context);
+    }
+
+    public static File prootBinary(Context context) {
+        if (apkProotReady(context)) return apkProot(context);
+        if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot.so");
+        if (SessionPrefs.allowStockProot(context)) return rootfsProot(context);
+        return apkProot(context);
+    }
+
+    public static File prootLoader(Context context) {
+        if (apkProotReady(context)) return apkLoader(context);
+        if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot-loader.so");
+        if (SessionPrefs.allowStockProot(context)) return rootfsLoader(context);
+        return apkLoader(context);
+    }
+
+    /** Where {@link #prootBinary} came from: {@link #PROOT_APK}, {@link #PROOT_PACK}, {@link #PROOT_ROOTFS} or {@link #PROOT_MISSING}. */
+    public static String prootSource(Context context) {
+        File bin = prootBinary(context);
+        if (!bin.isFile()) return PROOT_MISSING;
+        if (apkProotReady(context) && bin.getPath().equals(apkProot(context).getPath())) return PROOT_APK;
+        if (AddonPack.PROOT.installed(context)
+                && bin.getPath().equals(AddonPack.PROOT.file(context, "libproot.so").getPath())) return PROOT_PACK;
+        return PROOT_ROOTFS;
     }
 
     public static String prootLibraryPath(Context context) {
@@ -85,8 +135,7 @@ public final class LinuxRuntime {
         return new File(root, "usr/bin/gamescope").isFile()
                 && (new File(root, SESSION_SCRIPT.substring(1)).isFile()
                         || new File(root, LegacyNames.SESSION_SCRIPT.substring(1)).isFile())
-                && prootBinary(context).isFile()
-                && prootLoader(context).isFile();
+                && (patchedProot(context) || rootfsProotReady(context));
     }
 
     public static File vulkanIcd(Context context) {

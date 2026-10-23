@@ -180,6 +180,8 @@
     <string name="app_fex_hint">FEX runs x86 Linux programs on this ARM64 device. Auto uses it when the program is built for x86.</string>
     <string name="app_fex_x86">%1$s through FEX</string>
     <string name="app_fex_not_ready">This program is built for %1$s PCs and runs through FEX, which is not set up yet. Open Steam once while signed in: DroidDeck has it download FEX and the Steam Linux Runtime it needs, then this opens.</string>
+    <string name="session_proot_missing">DroidDeck\'s proot could not be downloaded. Check the connection and try again. The session was not started, because the fallback proot is too slow to play on.</string>
+    <string name="session_directaudio_missing">DirectAudio could not be downloaded, so game audio uses the slower path this session.</string>
     <string name="session_end_program">This program</string>
     <string name="session_end_steam_download">Couldn\'t download the Steam client. Your network or VPN may be blocking Steam\'s servers; check the connection and try again.</string>
     <string name="session_end_steam_setup">Couldn\'t set up the Steam client. Check your connection and free storage, then try again.</string>
@@ -566,6 +568,8 @@
     <string name="perf_fastpath">proot fast path</string>
     <string name="perf_fastpath_needs_seccomp">Needs proot\'s seccomp filter.</string>
     <string name="perf_fastpath_hint">Faster file lookups and less stutter. Turn off if a program can\'t find its files.</string>
+    <string name="perf_cursor_composite">Draw the cursor inside gamescope</string>
+    <string name="perf_cursor_composite_hint">Gamescope paints the pointer itself instead of handing it to Android. Turn on for a controller-driven cursor. Off is faster on a phone. Applies next session.</string>
     <string name="perf_identity">Session identity</string>
     <string name="perf_hostname">Host name</string>
     <string name="perf_hostname_hint">The name Steam sees for this device. Blank restores %1$s.</string>
