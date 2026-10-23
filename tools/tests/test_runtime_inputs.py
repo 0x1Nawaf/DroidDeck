@@ -72,7 +72,7 @@ class RuntimeInputsTest(unittest.TestCase):
         apk = self.root / 'no-proot.apk'
         with ZipFile(apk, 'w') as package:
             for name, output in data['outputs'].items():
-                if name in runtime.PROOT_PACK or not self.in_apk(name):
+                if name == "lib/arm64-v8a/libproot.so" or not self.in_apk(name):
                     continue
                 package.writestr(name, (self.root / output['path']).read_bytes())
         with self.assertRaisesRegex(ValueError, 'APK missing lib/arm64-v8a/libproot.so'):
