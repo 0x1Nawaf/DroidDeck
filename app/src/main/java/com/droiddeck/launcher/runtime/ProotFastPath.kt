@@ -16,8 +16,7 @@ object ProotFastPath {
      * The rootfs copy (Termux's stock proot) is not that binary, so the library stays out.
      */
     fun allows(preference: Boolean, noSeccomp: Boolean, source: String): Boolean =
-        preference && !noSeccomp &&
-            (source == LinuxRuntime.PROOT_APK || source == LinuxRuntime.PROOT_PACK)
+        preference && !noSeccomp && source == LinuxRuntime.PROOT_PACK
 
     fun enabled(context: Context): Boolean {
         val preference = SessionPrefs.prootFastPath(context)

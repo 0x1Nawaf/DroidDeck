@@ -16,9 +16,8 @@ PACKS = Path('app/build/packs')
 # Runtime trees shipped as add-on packs (tools/packs/build.sh) rather than inside the APK.
 PACKED = {'assets/linuxfs/usr/local/lib/droiddeck-xbox/': 'xbox', 'assets/linuxfs/usr/local/lib/droiddeck-comet/': 'comet',
           'assets/directaudio/': 'directaudio'}
-# Proot ships in the APK. The pack carries the same bytes for a build that did not embed them.
-PROOT_PACK = {'lib/arm64-v8a/libproot.so': 'libproot.so',
-              'lib/arm64-v8a/libproot-loader.so': 'libproot-loader.so'}
+PACKED_FILES = {'lib/arm64-v8a/libproot.so': ('proot', 'libproot.so'),
+                'lib/arm64-v8a/libproot-loader.so': ('proot', 'libproot-loader.so')}
 PACKED_LIBRARIES = ['lib/arm64-v8a/libopencv_java4.so', 'lib/arm64-v8a/libmediapipe_tasks_jni.so']
 PACK_NAMES = ['proot', 'directaudio', 'tracking', 'xbox', 'comet']
 SOURCE_PATHS = ['app/build.gradle', 'app/src/main/cpp/fakeinput_steam.cpp', 'app/src/main/assets/pulseaudio.tzst',
@@ -196,10 +195,14 @@ def check_apk(apk, root=ROOT):
                 raise ValueError('APK still carries ' + library + ', which the tracking pack provides')
             if library.rsplit('/', 1)[1] not in packs['tracking']:
                 raise ValueError('Tracking pack missing ' + library)
-        for name, rel in PROOT_PACK.items():
-            if packs['proot'].get(rel) != data['outputs'][name]['sha256']:
-                raise ValueError('Add-on pack proot is missing or has a stale ' + name)
         for name, output in data['outputs'].items():
+            if name in PACKED_FILES:
+                pack, rel = PACKED_FILES[name]
+                if name in names:
+                    raise ValueError('APK still carries ' + name + ', which the ' + pack + ' pack provides')
+                if packs[pack].get(rel) != output['sha256']:
+                    raise ValueError('Add-on pack ' + pack + ' is missing or has a stale ' + name)
+                continue
             prefix = next((p for p in PACKED if name.startswith(p)), None)
             if prefix:
                 if name in names:

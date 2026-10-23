@@ -567,7 +567,7 @@ jobs:
           source tools/packs/proot/release.env
           sha=$(sha256sum app/build/packs/proot.tar.zst | cut -d' ' -f1)
           if [ "$sha" != "$PROOT_PACK_SHA256" ]; then
-            echo "::warning::built proot pack $sha does not match tools/packs/proot/release.env ($PROOT_PACK_SHA256). The APK embeds libproot.so, so this build is fine. Source builds keep downloading the pinned pack until release.env is updated."
+            echo "::warning::built proot pack $sha does not match tools/packs/proot/release.env ($PROOT_PACK_SHA256). This build publishes the pack it just built. Source builds keep downloading the pinned pack until release.env is updated."
           fi
 
       - name: Build

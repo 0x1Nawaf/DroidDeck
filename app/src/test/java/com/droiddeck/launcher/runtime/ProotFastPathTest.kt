@@ -21,11 +21,10 @@ class ProotFastPathTest {
     }
 
     @Test fun fastPathStaysOffForTheRootfsProot() {
-        assertTrue(ProotFastPath.allows(preference = true, noSeccomp = false, source = LinuxRuntime.PROOT_APK))
         assertTrue(ProotFastPath.allows(preference = true, noSeccomp = false, source = LinuxRuntime.PROOT_PACK))
         assertFalse(ProotFastPath.allows(preference = true, noSeccomp = false, source = LinuxRuntime.PROOT_ROOTFS))
         assertFalse(ProotFastPath.allows(preference = true, noSeccomp = false, source = LinuxRuntime.PROOT_MISSING))
-        assertFalse(ProotFastPath.allows(preference = false, noSeccomp = false, source = LinuxRuntime.PROOT_APK))
-        assertFalse(ProotFastPath.allows(preference = true, noSeccomp = true, source = LinuxRuntime.PROOT_APK))
+        assertFalse(ProotFastPath.allows(preference = false, noSeccomp = false, source = LinuxRuntime.PROOT_PACK))
+        assertFalse(ProotFastPath.allows(preference = true, noSeccomp = true, source = LinuxRuntime.PROOT_PACK))
     }
 }

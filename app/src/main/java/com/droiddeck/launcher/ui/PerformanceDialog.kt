@@ -46,7 +46,6 @@ fun PerformancePage(
     gpuClockPin: Boolean,
     prootNoSeccomp: Boolean,
     prootFastPath: Boolean,
-    cursorComposite: Boolean,
     guestHostname: String,
     phantomWarning: String?,
     onClientOverride: (Boolean) -> Unit,
@@ -62,7 +61,6 @@ fun PerformancePage(
     onGpuClockPin: (Boolean) -> Unit,
     onProotNoSeccomp: (Boolean) -> Unit,
     onProotFastPath: (Boolean) -> Unit,
-    onCursorComposite: (Boolean) -> Unit,
     onGuestHostname: (String) -> Unit,
     onClientCore: (Int, Boolean) -> Unit,
     onGameCore: (Int, Boolean) -> Unit,
@@ -159,11 +157,6 @@ fun PerformancePage(
                 if (prootNoSeccomp) stringResource(R.string.perf_fastpath_needs_seccomp)
                 else stringResource(R.string.perf_fastpath_hint),
                 prootFastPath && !prootNoSeccomp, enabled = !prootNoSeccomp, onChange = onProotFastPath,
-            )
-            ToggleRow(
-                host, "cursorcomposite", stringResource(R.string.perf_cursor_composite),
-                stringResource(R.string.perf_cursor_composite_hint),
-                cursorComposite, onChange = onCursorComposite,
             )
         }
         SettingsGroup(stringResource(R.string.perf_identity)) {

@@ -63,25 +63,11 @@ public final class LinuxRuntime {
     }
 
     private static final String HOST_DIR = "opt/android-host";
-    /** The copy built with this tree and shipped in the APK. */
-    public static final String PROOT_APK = "apk";
-    /** The downloaded add-on pack, used when this build did not embed proot. */
+    /** The downloaded add-on pack. The APK does not ship this binary. */
     public static final String PROOT_PACK = "add-on pack";
     /** Termux's unpatched proot inside the rootfs. Developer switch only. */
     public static final String PROOT_ROOTFS = "rootfs fallback";
     public static final String PROOT_MISSING = "missing";
-
-    private static File apkProot(Context context) {
-        return new File(context.getApplicationInfo().nativeLibraryDir, "libproot.so");
-    }
-
-    private static File apkLoader(Context context) {
-        return new File(context.getApplicationInfo().nativeLibraryDir, "libproot-loader.so");
-    }
-
-    private static boolean apkProotReady(Context context) {
-        return apkProot(context).isFile() && apkLoader(context).isFile();
-    }
 
     private static File rootfsProot(Context context) {
         return new File(rootDir(context), HOST_DIR + "/proot");
@@ -95,30 +81,27 @@ public final class LinuxRuntime {
         return rootfsProot(context).isFile() && rootfsLoader(context).isFile();
     }
 
-    /** Patched proot: the APK's own binary, or the add-on pack when the APK has none. */
+    /** Patched proot is the add-on pack. The rootfs copy is not that binary. */
     public static boolean patchedProot(Context context) {
-        return apkProotReady(context) || AddonPack.PROOT.installed(context);
+        return AddonPack.PROOT.installed(context);
     }
 
     public static File prootBinary(Context context) {
-        if (apkProotReady(context)) return apkProot(context);
         if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot.so");
         if (SessionPrefs.allowStockProot(context)) return rootfsProot(context);
-        return apkProot(context);
+        return AddonPack.PROOT.file(context, "libproot.so");
     }
 
     public static File prootLoader(Context context) {
-        if (apkProotReady(context)) return apkLoader(context);
         if (AddonPack.PROOT.installed(context)) return AddonPack.PROOT.file(context, "libproot-loader.so");
         if (SessionPrefs.allowStockProot(context)) return rootfsLoader(context);
-        return apkLoader(context);
+        return AddonPack.PROOT.file(context, "libproot-loader.so");
     }
 
-    /** Where {@link #prootBinary} came from: {@link #PROOT_APK}, {@link #PROOT_PACK}, {@link #PROOT_ROOTFS} or {@link #PROOT_MISSING}. */
+    /** Where {@link #prootBinary} came from: {@link #PROOT_PACK}, {@link #PROOT_ROOTFS} or {@link #PROOT_MISSING}. */
     public static String prootSource(Context context) {
         File bin = prootBinary(context);
         if (!bin.isFile()) return PROOT_MISSING;
-        if (apkProotReady(context) && bin.getPath().equals(apkProot(context).getPath())) return PROOT_APK;
         if (AddonPack.PROOT.installed(context)
                 && bin.getPath().equals(AddonPack.PROOT.file(context, "libproot.so").getPath())) return PROOT_PACK;
         return PROOT_ROOTFS;
